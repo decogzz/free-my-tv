@@ -62,19 +62,21 @@
 
   /** Shelf apps in this order when installed, like the Android app: key, LG app id, name on the TV, brand gradient. */
   var SHELF = [
-    ['netflix', /^netflix$/, /netflix/i, ['#0A0A0A', '#000000']],
+    ['stremio', /stremio/, /stremio/i, ['#2A1F5C', '#120B33']],
     ['youtube', /youtube/, /^youtube$/i, ['#1C1C1E', '#09090A']],
+    ['netflix', /^netflix$/, /netflix/i, ['#0A0A0A', '#000000']],
+    ['max', /hbo|wbd/, /^(hbo )?max$|hbo max/i, ['#5C30E8', '#221684']],
     ['prime', /^amazon$/, /prime video|amazon/i, ['#2AA8FF', '#0A68D4']],
     ['disney', /disney/, /disney/i, ['#173584', '#08143F']],
-    ['max', /hbo|wbd/, /^(hbo )?max$|hbo max/i, ['#5C30E8', '#221684']],
+    ['crunchyroll', /crunchyroll/, /crunchyroll/i, ['#F47521', '#B34A0A']],
     ['appletv', /appletv|apple\.tv/, /apple tv/i, ['#1C1C1E', '#000000']],
+    ['spotify', /spotify/, /spotify/i, ['#1DB954', '#0F7A36']],
     ['hulu', /^hulu/, /hulu/i, ['#1CE783', '#0B8F4E']],
     ['paramount', /paramount|cbs/, /paramount/i, ['#0064FF', '#002A86']],
     ['peacock', /peacock/, /peacock/i, ['#1C1C1E', '#000000']],
-    ['globoplay', /globoplay/, /globoplay/i, ['#FF8A1F', '#FF2D5A']],
-    ['spotify', /spotify/, /spotify/i, ['#1DB954', '#0F7A36']]
+    ['globoplay', /globoplay/, /globoplay/i, ['#FF8A1F', '#FF2D5A']]
   ];
-  var MAX_SHELF = 8;
+  var MAX_SHELF = 9;
 
   function shelfKey(app) {
     for (var i = 0; i < SHELF.length; i++) if (SHELF[i][1].test(app.id) || SHELF[i][2].test(app.title)) return SHELF[i];
