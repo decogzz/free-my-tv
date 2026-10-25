@@ -62,25 +62,45 @@
 
   // MARK: - Apps on the board
 
-  /** Board apps in this order when installed, like the Android app: key, LG app id, name on the TV, brand gradient. */
+  /** Board apps in this order when installed, like the Android app: key, id pattern, name pattern, brand gradient. */
   var SHELF = [
-    ['youtube', /youtube/, /^youtube$/i, ['#1C1C1E', '#09090A']],
-    ['netflix', /^netflix$/, /netflix/i, ['#0A0A0A', '#000000']],
-    ['max', /hbo|wbd/, /^(hbo )?max$|hbo max/i, ['#5C30E8', '#221684']],
-    ['prime', /^amazon$/, /prime video|amazon/i, ['#2AA8FF', '#0A68D4']],
-    ['disney', /disney/, /disney/i, ['#173584', '#08143F']],
-    ['crunchyroll', /crunchyroll/, /crunchyroll/i, ['#F47521', '#B34A0A']],
-    ['appletv', /appletv|apple\.tv/, /apple tv/i, ['#1C1C1E', '#000000']],
-    ['spotify', /spotify/, /spotify/i, ['#1DB954', '#0F7A36']],
-    ['hulu', /^hulu/, /hulu/i, ['#1CE783', '#0B8F4E']],
-    ['paramount', /paramount|cbs/, /paramount/i, ['#0064FF', '#002A86']],
-    ['peacock', /peacock/, /peacock/i, ['#1C1C1E', '#000000']],
-    ['globoplay', /globoplay/, /globoplay/i, ['#FF8A1F', '#FF2D5A']]
+    ['youtube', /youtube/i, /youtube/i, ['#1C1C1E', '#09090A']],
+    ['netflix', /(^|\.)netflix($|\.)/i, /netflix/i, ['#0A0A0A', '#000000']],
+    ['max', /(^|\.)(hbo)?max$|wbd/i, /^(hbo )?max$|hbo max/i, ['#5C30E8', '#221684']],
+    ['prime', /amazon|prime\s?video/i, /prime video|amazon/i, ['#2AA8FF', '#0A68D4']],
+    ['disney', /disney/i, /disney/i, ['#173584', '#08143F']],
+    ['crunchyroll', /crunchyroll/i, /crunchyroll/i, ['#F47521', '#B34A0A']],
+    ['appletv', /appletv|apple\.tv/i, /apple tv/i, ['#1C1C1E', '#000000']],
+    ['spotify', /spotify/i, /spotify/i, ['#1DB954', '#0F7A36']],
+    ['pluto', /pluto/i, /pluto/i, ['#101014', '#0A0A0D']],
+    ['hulu', /(^|\.)hulu/i, /hulu/i, ['#1CE783', '#0B8F4E']],
+    ['paramount', /paramount|cbs/i, /paramount/i, ['#0064FF', '#002A86']],
+    ['peacock', /peacock/i, /peacock/i, ['#1C1C1E', '#000000']],
+    ['globoplay', /globoplay/i, /globoplay/i, ['#FF8A1F', '#FF2D5A']]
   ];
   var MAX_SHELF = 16;   // two rows of eight
 
+  /** Brands that aren't on the default shelf but still get their mark in All Apps. */
+  var OTHER_BRANDS = [
+    ['stremio', /stremio/, /stremio/i],
+    ['plex', /plex/, /plex/i],
+    ['dazn', /dazn/, /dazn/i]
+  ];
+
+  /** TizenBrew-style app ids — ten characters, a dot, a name: their icons are placeholder art. */
+  function sideloaded(id) { return /^[0-9A-Za-z]{10}\./.test(id || ''); }
+
   function shelfKey(app) {
     for (var i = 0; i < SHELF.length; i++) if (SHELF[i][1].test(app.id) || SHELF[i][2].test(app.title)) return SHELF[i];
+    return null;
+  }
+
+  function brandKey(app) {
+    var k = shelfKey(app);
+    if (k) return k[0];
+    for (var i = 0; i < OTHER_BRANDS.length; i++) {
+      if (OTHER_BRANDS[i][1].test(app.id) || OTHER_BRANDS[i][2].test(app.title)) return OTHER_BRANDS[i][0];
+    }
     return null;
   }
 
@@ -96,16 +116,37 @@
     return Math.max(18, Math.min(max, Math.floor(width * 0.8 / (Math.max(4, title.length) * 0.56))));
   }
 
-  /** An app's face: its own icon filling the tile (or its brand color and name, when the icon can't be read). */
+  /** The brand's mark (brands.js), drawn white unless it owns its colors (Peacock's feathers, Pluto's yellow). */
+  function mark(key, box) {
+    var m = window.MARKS && window.MARKS[key];
+    if (!m) return false;
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', m[0]);
+    var owns = {peacock: 1, pluto: 1, netflix: 1};
+    for (var i = 0; i < m[1].length; i++) {
+      var p = document.createElementNS(ns, 'path');
+      p.setAttribute('d', m[1][i][0]);
+      p.setAttribute('fill', m[1][i][1] || (owns[key] ? '#E50914' : '#FFF'));
+      svg.appendChild(p);
+    }
+    box.appendChild(svg);
+    return true;
+  }
+
+  /** An app's face: the brand's mark on its gradient, the app's own icon when it has no mark (or full-bleed
+   *  when the icon is placeholder art — TizenBrew wrappers), its name when it has neither. */
   function face(app, box, wordSize) {
-    var k = shelfKey(app);
+    var k = shelfKey(app), key = brandKey(app);
     var top = k ? k[3][0] : app.color ? darken(app.color, 0.92) : '#2A2A2E';
     var bottom = k ? k[3][1] : app.color ? darken(app.color, 0.62) : '#161618';
     box.style.background = '-webkit-linear-gradient(top, ' + top + ', ' + bottom + ')';
     box.style.background = 'linear-gradient(' + top + ', ' + bottom + ')';
     var word = el('div', 'word', box, app.title);
     if (wordSize) word.style.fontSize = wordSize + 'px';
-    if (app.icon) {
+    if (key && mark(key, box)) {
+      word.style.visibility = 'hidden';
+    } else if (app.icon && !sideloaded(app.id)) {
       var img = el('img', '', box);
       word.style.visibility = 'hidden';
       img.onerror = function () { img.parentNode.removeChild(img); word.style.visibility = ''; };
@@ -115,17 +156,33 @@
 
   var apps = [], shelf = [], others = [], inputs = [];
 
+  /** Among equally-matching apps (the native YouTube and TizenBrew's wrapper), the TV's own comes first. */
+  function betterMatch(a, b) {
+    if (!a) return b;
+    var sa = sideloaded(a.id), sb = sideloaded(b.id);
+    if (sa !== sb) return sb ? a : b;   // the native one wins
+    return a.title.toLowerCase() <= b.title.toLowerCase() ? a : b;
+  }
+
+  /** The saved shelf, saved as {v: 2, ids: […]} — orders from before Pluto TV joined the default are dropped. */
+  function savedShelf() {
+    var v = Prefs.shelf();
+    return v && v.v === 2 && v.ids ? v.ids : null;
+  }
+
   function pickShelf() {
-    var chosen = Prefs.shelf(), out = [];
+    var chosen = savedShelf(), out = [];
     if (chosen) {
       for (var i = 0; i < chosen.length && out.length < MAX_SHELF; i++) {
         for (var j = 0; j < apps.length; j++) if (apps[j].id === chosen[i]) out.push(apps[j]);
       }
     } else {
       for (var s = 0; s < SHELF.length && out.length < MAX_SHELF; s++) {
+        var found = null;
         for (var a = 0; a < apps.length; a++) {
-          if ((SHELF[s][1].test(apps[a].id) || SHELF[s][2].test(apps[a].title)) && out.indexOf(apps[a]) < 0) { out.push(apps[a]); break; }
+          if ((SHELF[s][1].test(apps[a].id) || SHELF[s][2].test(apps[a].title)) && out.indexOf(apps[a]) < 0) found = betterMatch(found, apps[a]);
         }
+        if (found) out.push(found);
       }
       if (!out.length) out = apps.slice(0, MAX_SHELF);
     }
@@ -159,7 +216,9 @@
     for (var i = 0; i < rows.length; i++) setClass(rows[i], 'focus', on && i === index);
     var holder = sheet.querySelector('.rows');
     if (!holder) return;
-    var visible = 7, first = Math.max(0, Math.min(rows.length - visible, index - 3));
+    var visible = sheet.id === 'shelfedit' ? 6 : 7;
+    var first = Math.max(0, Math.min(rows.length - visible, index - 2));
+    if (index < 0) first = 0;
     holder.style.webkitTransform = holder.style.transform = 'translateY(' + (-first * 78) + 'px)';
   }
 
@@ -209,7 +268,7 @@
       var row = Math.floor(i / BOARD.cols), col = i % BOARD.cols;
       var t = el('div', 'tile', tiles);
       t.style.left = (left + col * (tw + gap)) + 'px';
-      t.style.top = (156 + row * (tw + 26)) + 'px';
+      t.style.top = (188 + row * (tw + 26)) + 'px';
       t.style.width = tw + 'px';
       t.style.height = tw + 'px';
       face(shelf[i], t, wordFit(shelf[i].title, tw, 30));
@@ -429,37 +488,86 @@
   }
 
   function editList() {
+    var q = editQuery().toLowerCase();
     var ids = shelf.map(function (a) { return a.id; });
-    return {ids: ids, rows: apps.slice().sort(function (a, b) {
+    var rows = apps.slice();
+    if (q) rows = rows.filter(function (a) { return a.title.toLowerCase().indexOf(q) >= 0 || a.id.toLowerCase().indexOf(q) >= 0; });
+    rows.sort(function (a, b) {
       var ia = ids.indexOf(a.id), ib = ids.indexOf(b.id);
       if (ia >= 0 || ib >= 0) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
       return a.title.toLowerCase() < b.title.toLowerCase() ? -1 : 1;
-    })};
+    });
+    return {ids: ids, rows: rows};
   }
 
-  function renderShelfEdit() {
+  /** The search box's text, kept across redraws (module state, not a DOM read). */
+  var editQuery = function () { return ''; };
+  var editSearchBox = null;   // {input, typing} while the Shelf sheet is open
+
+  /** Just the list of apps, rebuilt on every keystroke (the search box itself stays, so the keyboard stays up). */
+  function editRows() {
     var box = $('shelfedit').firstChild, e = editList();
-    box.innerHTML = '';
-    var title = el('div', 'title', box);
-    sym('apps', title);
-    title.appendChild(document.createTextNode(tr('Prateleira', 'Shelf', 'Estante')));
-    var list = el('div', 'list', box), holder = el('div', 'rows', list);
-    list.style.height = Math.min(e.rows.length, 7) * 78 + 'px';
+    var list = box.querySelector('.list');
+    if (!list) return;
+    list.innerHTML = '';
+    var holder = el('div', 'rows', list);
+    list.style.height = Math.min(e.rows.length, 6) * 78 + 'px';
     for (var i = 0; i < e.rows.length; i++) {
       var a = e.rows[i], at = e.ids.indexOf(a.id), row = el('div', 'row', holder, a.title);
       el('span', 'value', row, at >= 0 ? tr('Na prateleira · ', 'On · ', 'En el estante · ') + ordinal(at + 1) : tr('Fora', 'Off', 'Fuera'));
       hover(row, Z.EDIT, i);
     }
+    var none = box.querySelector('.none');
+    if (none) none.textContent = e.rows.length ? '' : tr('Nenhum app encontrado.', 'No apps found.', 'Ninguna app encontrada.');
+    if (st.edit >= e.rows.length) st.edit = e.rows.length - 1;
+    updateFocus();
+  }
+
+  function renderShelfEdit() {
+    var box = $('shelfedit').firstChild;
+    box.innerHTML = '';
+    var title = el('div', 'title', box);
+    sym('apps', title);
+    title.appendChild(document.createTextNode(tr('Prateleira', 'Shelf', 'Estante')));
+    var search = el('div', 'search', box);
+    var icon = el('span', 'sym', search);
+    icon.style.webkitMaskImage = icon.style.maskImage = 'url(symbols/search.png)';
+    var input = el('input', '', search);
+    input.type = 'text';
+    input.value = editQuery();
+    input.placeholder = tr('Buscar app…', 'Find an app…', 'Buscar app…');
+    var typing = false;
+    editSearchBox = {input: input, typing: function () { return typing; }};
+    input.onfocus = function () { typing = true; setClass(search, 'focus', true); };
+    input.onblur = function () { typing = false; setClass(search, 'focus', false); };
+    input.oninput = function () {
+      editQuery = function () { return input.value; };
+      st.edit = -1;
+      editRows();
+    };
+    input.onkeydown = function (ev) {
+      var k = ev.keyCode || ev.which;
+      if (k === TV.keys.back || k === 27) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (input.value) { input.value = ''; input.oninput(); }
+        else input.blur();
+      }
+    };
+    var list = el('div', 'list', box);
+    el('div', 'none', box);
     el('div', 'hint', box, tr('OK põe ou tira · ← → mudam a ordem', 'OK adds or removes · ← → change the order', 'OK pone o quita · ← → cambian el orden'));
+    editRows();
     updateFocus();
   }
 
   function openShelfEdit() {
     setClass($('settings'), 'open', false);
     st.zone = Z.EDIT;
-    st.edit = 0;
+    st.edit = -1;   // the search box has the focus first: with hundreds of apps, finding beats browsing
     renderShelfEdit();
     setClass($('shelfedit'), 'open', true);
+    if (editSearchBox) editSearchBox.input.focus();
     updateFocus();
   }
 
@@ -477,12 +585,12 @@
       ids.splice(at, 1);
       ids.splice(to, 0, app.id);
     }
-    Prefs.set('shelf', ids);
+    Prefs.set('shelf', {v: 2, ids: ids});
     pickShelf();
     renderShelf();
     var again = editList();
     for (var i = 0; i < again.rows.length; i++) if (again.rows[i].id === app.id) st.edit = i;
-    renderShelfEdit();
+    editRows();
   }
 
   // MARK: - Opening things
@@ -516,7 +624,9 @@
         if (rowsNow[st.row]) { rowsNow[st.row].step(1); if (st.zone === Z.SETTINGS) renderSettings(); }
         return;
       case Z.EDIT:
-        editShelf(0);
+        if (st.edit < 0) {
+          if (editSearchBox && !editSearchBox.typing()) editSearchBox.input.focus();   // OK re-opens the keyboard
+        } else editShelf(0);
         return;
     }
   }
@@ -548,15 +658,37 @@
         }
         break;
       case Z.EDIT:
-        if (dy) st.edit = Math.max(0, Math.min(apps.length - 1, st.edit + dy));
-        else if (dx) editShelf(dx);
+        if (st.edit < 0) {   // the search box: Down leaves it for the list, Up goes back to Settings
+          if (dy > 0) { st.edit = 0; if (editSearchBox && editSearchBox.typing()) editSearchBox.input.blur(); }
+          else if (dy < 0) back();
+        } else if (dy) {
+          if (dy < 0 && st.edit === 0) {   // Up from the first row: back to the search box
+            st.edit = -1;
+            if (editSearchBox) editSearchBox.input.focus();
+          } else {
+            var len = editList().rows.length;
+            st.edit = Math.max(0, Math.min(len - 1, st.edit + dy));
+          }
+        } else if (dx) editShelf(dx);
         break;
     }
     updateFocus();
   }
 
   function back() {
-    if (st.zone === Z.EDIT) { setClass($('shelfedit'), 'open', false); openSettings(); st.row = rowsNow.length - 2; updateFocus(); return; }
+    if (st.zone === Z.EDIT) {
+      var input = editSearchBox && editSearchBox.input;
+      if (input && st.edit < 0) {
+        if (editSearchBox.typing() && input.value) { input.value = ''; input.oninput(); return; }
+        if (editSearchBox.typing()) { input.blur(); return; }
+      }
+      editQuery = function () { return ''; };
+      setClass($('shelfedit'), 'open', false);
+      openSettings();
+      st.row = rowsNow.length - 2;
+      updateFocus();
+      return;
+    }
     if (sheetOpen()) { closeSheets(); return; }
     if (st.zone !== Z.TILES && shelf.length) { st.zone = Z.TILES; updateFocus(); return; }
     TV.back();
@@ -657,6 +789,11 @@
   document.addEventListener('keydown', function (e) {
     var k = e.keyCode;
     if (poke()) { e.preventDefault(); return; }   // the first press only wakes the screen
+    // While the search box has the keyboard, its own handler takes the keys (the arrows move its caret).
+    if (st.zone === Z.EDIT && st.edit < 0 && editSearchBox && editSearchBox.typing()) {
+      if (k === TV.keys.back || k === 27) { back(); e.preventDefault(); }
+      return;
+    }
     if (k === TV.keys.left) move(-1, 0);
     else if (k === TV.keys.right) move(1, 0);
     else if (k === TV.keys.up) move(0, -1);

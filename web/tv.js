@@ -45,9 +45,13 @@ var TV = (function () {
   // Not shown among LG's apps: the inputs above, LG's own home and launchers.
   var HIDDEN = /^(com\.webos\.app\.(livetv|hdmi\d|home|homeconnect|discovery|launcher)|com\.webos\.app\.inputpicker)$/;
 
-  // Not shown among Samsung's apps: Smart Hub's own pieces, the platform's tools and players (but its browser and
-  // Netflix, which live there too), services, keyboards and ad players. The rest is what Smart Hub shows.
-  var SAMSUNG_HIDDEN = /^(org\.volt\.|org\.tizen\.(?!browser$|netflix)|ise-|d75857a5-)|Service$|[Dd]aemon|Preview$|syspopup|[Hh]elper$|AdPlayer|AdSuite|[Kk]eyboard/;
+  // Not shown among Samsung's apps: the platform's own pieces — Smart Hub's components, its tools, players,
+  // popups, keyboards, ad players, the factory and hotel tests — everything under Samsung's and Tizen's
+  // names. What a person actually opens is the exception (SAMSUNG_SHOWN): the browser, the native YouTube,
+  // the store, the Gaming Hub, SmartThings, TV Plus, Netflix. Third-party apps (TizenBrew's, the store's)
+  // don't carry those names, so they always show.
+  var SAMSUNG_SHOWN = /^(org\.tizen\.(browser|netflix|tvplus)|com\.samsung\.tv\.(cobalt-yt|cobalt-ytkids|cobalt-yttv|store|gaminghub|gamehome|SmartThingsApp))$/;
+  var SAMSUNG_HIDDEN = /^(org\.volt\.|org\.tizen\.|ise-|d75857a5-|com\.samsung\.|com\.sausng\.|samsung-|emergency-|ep-|gsl-|lib-|p2p-|signlanguage-|test-|ug-|csapi-|mobilebff)|([Ss]ervice|[Dd]aemon)$|Preview$|syspopup|[Hh]elper$|AdPlayer|AdSuite|[Kk]eyboard/;
 
   // Samsung's live TV viewer: it shows whichever source the TV is on (the antenna, or the HDMI picked here).
   var SAMSUNG_VIEWER = 'org.tizen.tv-viewer';
@@ -74,7 +78,8 @@ var TV = (function () {
         var out = [];
         for (var i = 0; i < list.length; i++) {
           var a = list[i];
-          if (!a.id || a.show === false || a.id === self || SAMSUNG_HIDDEN.test(a.id)) continue;
+          if (!a.id || a.id === self || (!SAMSUNG_SHOWN.test(a.id) && SAMSUNG_HIDDEN.test(a.id))) continue;
+          try { if (a.isNoDisplay) continue; } catch (e) {}
           var icon = a.iconPath || '';
           if (icon && icon.indexOf('://') < 0) icon = 'file://' + icon;
           out.push({id: a.id, title: a.name || a.id, icon: icon, color: ''});

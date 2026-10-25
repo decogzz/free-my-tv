@@ -123,7 +123,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 #board {
   position: absolute;
-  top: 118px;
+  top: 150px;
   height: 498px;
   border-radius: 62px;
 }
@@ -145,6 +145,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   height: 100%;
   -webkit-transform: none;
   transform: none;
+}
+/* The brand's mark, drawn on its gradient: centered, most of the tile, breathing room at the edge. */
+.tile svg, .cell .face svg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 60%;
+  height: 60%;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
 }
 .tile .word {
   position: absolute;
@@ -178,7 +188,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* MARK: - Keys: the inputs and shortcuts, a row under the board. */
 
-#keys { position: absolute; top: 632px; height: 118px; }
+#keys { position: absolute; top: 664px; height: 118px; }
 .key {
   position: absolute;
   top: 0;
@@ -199,7 +209,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* MARK: - Panels: the weather and the crypto prices at the bottom. */
 
-.panel { position: absolute; top: 768px; height: 236px; border-radius: 30px; overflow: hidden; color: #1D1D1F; }
+.panel { position: absolute; top: 800px; height: 236px; border-radius: 30px; overflow: hidden; color: #1D1D1F; }
 .night .panel { color: #F5F5F7; }
 .panel .head { position: absolute; left: 30px; top: 24px; font-size: 23px; font-weight: 600; color: #6E6E73; white-space: nowrap; }
 .panel .side { position: absolute; right: 30px; top: 27px; font-size: 19px; font-weight: 500; color: #8E8E93; white-space: nowrap; }
@@ -291,10 +301,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .box .row .value .chev { color: rgba(255, 255, 255, 0.35); margin: 0 10px; }
 .box .row.dim { color: rgba(255, 255, 255, 0.4); }
 .box .hint { padding: 14px 18px 0; font-size: 22px; font-weight: 500; color: rgba(255, 255, 255, 0.5); }
+.box .none { padding: 24px 18px 0; font-size: 24px; font-weight: 500; color: rgba(255, 255, 255, 0.55); }
 .toggle { position: absolute; right: 24px; top: 13px; width: 78px; height: 44px; border-radius: 22px; background: #3A3D45; -webkit-transition: background-color 0.2s; transition: background-color 0.2s; }
 .toggle::after { content: ''; position: absolute; left: 4px; top: 4px; width: 36px; height: 36px; border-radius: 18px; background: #FFF; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); -webkit-transition: -webkit-transform 0.2s; transition: transform 0.2s; }
 .toggle.on { background: #3FD69B; }
 .toggle.on::after { -webkit-transform: translateX(34px); transform: translateX(34px); }
+
+/* The Shelf's search: find an app by typing its name, with hundreds on the TV. */
+.box .search { position: relative; height: 74px; margin: 0 0 16px; border-radius: 20px; background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); -webkit-transition: box-shadow 0.18s, background-color 0.18s; transition: box-shadow 0.18s, background-color 0.18s; }
+.box .search.focus { background: rgba(255, 255, 255, 0.16); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55); }
+.box .search .sym { position: absolute; left: 24px; top: 23px; width: 30px; height: 30px; color: rgba(255, 255, 255, 0.7); }
+.box .search input { position: absolute; left: 70px; right: 24px; top: 0; height: 74px; border: 0; padding: 0; background: none; color: #FFF; font: 500 30px 'Inter', 'Helvetica Neue', Arial, sans-serif; }
+.box .search input:focus { outline: none; }
+.box .search input::-webkit-input-placeholder { color: rgba(255, 255, 255, 0.45); }
+.box .search input::placeholder { color: rgba(255, 255, 255, 0.45); }
 
 /* MARK: - Screensaver: the picks' photos, slowly moving, and a clock */
 
